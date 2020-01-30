@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DirectoryMirror": {
+      "commandName": "Project",
+      "workingDirectory": "C:\\TestEnvironments\\dm"
+    }
+  }
+}

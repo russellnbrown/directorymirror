@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="CSLib\**" />
+    <EmbeddedResource Remove="CSLib\**" />
+    <None Remove="CSLib\**" />
+    <Page Remove="CSLib\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ookii.Dialogs.Wpf.NETCore" Version="2.0.0" />
+  </ItemGroup>
+
+  
+</Project>
