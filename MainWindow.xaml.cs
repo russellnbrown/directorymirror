@@ -46,7 +46,10 @@ namespace DirectoryMirror
                 SourceTB.Text = Settings.Get("SourceDir", "");
                 DestinationTB.Text = Settings.Get("DestDir", "");
                 DryRunCB.IsChecked = Settings.Get("DryRun", true);
-                cz.IsChecked = Settings.Get("CheckSize", false);
+                CheckSizeCB.IsChecked = Settings.Get("CheckSize", false);
+                CheckSizeBiggerCB.IsChecked = Settings.Get("CheckSizeBigger", false);
+                CheckContentQuickCB.IsChecked = Settings.Get("CheckContentQuick", false);
+                TimeBufferCB.IsChecked = Settings.Get("TimeBuffer", false);
             }
             catch
             {
@@ -63,7 +66,7 @@ namespace DirectoryMirror
             if (copier != null)
             {
                 Status.Content = copier.GetStatus();
-                if (!copier.IsRunning)
+                if (!copier.IsRunning && (string)StartBtn.Content != "Start")
                     StartBtn.Content = "Start";
                 List<String> messages = copier.getMessages();
                 foreach(String s in messages)
@@ -119,8 +122,11 @@ namespace DirectoryMirror
                 MessageBox.Show(DestinationTB.Text + " does not exist");
                 return;
             }
-            copier = new Copier(SourceTB.Text, DestinationTB.Text, (bool)CheckTimestampsCB.IsChecked,
-                                (bool)CheckContentCB.IsChecked, (bool)cz.IsChecked, (bool)RemInDestCB.IsChecked, (bool)DryRunCB.IsChecked);
+            copier = new Copier(SourceTB.Text, DestinationTB.Text, 
+                                (bool)CheckTimestampsCB.IsChecked,(bool)TimeBufferCB.IsEnabled,
+                                (bool)CheckContentCB.IsChecked,(bool)CheckContentQuickCB.IsChecked, 
+                                (bool)CheckSizeCB.IsChecked, (bool)CheckSizeBiggerCB.IsChecked,
+                                (bool)RemInDestCB.IsChecked, (bool)DryRunCB.IsChecked);
             console.Items.Clear();
             copier.Start();
             StartBtn.Content = "Abort";
@@ -136,7 +142,12 @@ namespace DirectoryMirror
             Settings.Set("SourceDir", SourceTB.Text);
             Settings.Set("DestDir", DestinationTB.Text);
             Settings.Set("DryRun", (bool)DryRunCB.IsChecked);
-            Settings.Set("CheckSize", (bool)cz.IsChecked);
+            Settings.Set("CheckSize", (bool)CheckSizeCB.IsChecked);
+
+            Settings.Set("CheckSizeBigger", (bool)CheckSizeBiggerCB.IsChecked);
+            Settings.Set("CheckContentQuick", (bool)CheckContentQuickCB.IsChecked );
+            Settings.Set("TimeBuffer", (bool)TimeBufferCB.IsChecked);
+
             Settings.Save();
         }
 
@@ -148,6 +159,24 @@ namespace DirectoryMirror
             psi.UseShellExecute = true;
             Process.Start(psi); 
             l.Resume();
+        }
+
+        private void CheckSizeBigger_Click(object sender, RoutedEventArgs e)
+        {
+            if ((bool)CheckSizeBiggerCB.IsChecked)
+                CheckSizeCB.IsChecked = true;
+        }
+
+        private void CheckContentQuickCB_Click(object sender, RoutedEventArgs e)
+        {
+            if ( (bool)CheckContentQuickCB.IsChecked )
+                CheckContentCB.IsChecked = true;
+        }
+
+        private void TimeBufferCB_Click(object sender, RoutedEventArgs e)
+        {
+            if ((bool)TimeBufferCB.IsChecked)
+                CheckTimestampsCB.IsChecked = true;
         }
     }
 }

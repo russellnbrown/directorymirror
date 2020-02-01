@@ -30,33 +30,43 @@ namespace DirectoryMirror
     class Copier : IDisposable
     {
 
-        public int sourceDirCount = 0;
-        public int sourceFileCount = 0;
-        public int missingDirCount = 0;
-        public int copiedCount = 0;
-        public int foundCount = 0;
-        public int delCount = 0;
-        public bool dryRun = false;
+        private int sourceDirCount = 0;
+        private int sourceFileCount = 0;
+        private int missingDirCount = 0;
+        private int copiedCount = 0;
+        private int foundCount = 0;
+        private int delCount = 0;
+        private bool dryRun = false;
         private string status = "";
-        private string src;
-        private string dst;
+        private string src = "";
+        private string dst = "";
         private bool checkTime = false;
         private bool checkContent = false;
         private bool checkSize = false;
         private bool deleteMissing = false;
+        private bool contentQuick = false;
+        private bool isBigger = false;
         private bool isRunning = true;
         private Thread workThread = null;
         private bool aborted = false;
+        private DirectoryInfo dtop = null;
+        private const int quickCheckSize = 100000;
+        private const int timeBufferDiff = 120;
+        private int timeDiff = 0;
+        public bool IsRunning { get => isRunning; set => isRunning = value; }
 
 
         public string GetStatus()
         {
-            MakeStatus();
+            makeStatus();
             return status;
         }
-        public bool IsRunning { get => isRunning; set => isRunning = value; }
-
-        public Copier(string src, string dst, bool checkTime, bool checkContent, bool checkSize, bool deleteMissing, bool dryRun)
+  
+        public Copier(string src, string dst, 
+                      bool checkTime, bool timeBuffer, 
+                      bool checkContent, bool contentQuick,
+                      bool checkSize, bool isBigger, 
+                      bool deleteMissing, bool dryRun)
         {
             this.src = src;
             this.dst = dst;
@@ -65,14 +75,16 @@ namespace DirectoryMirror
             this.checkContent = checkContent;
             this.checkTime = checkTime;
             this.deleteMissing = deleteMissing;
+            this.isBigger = isBigger;
             sourceDirCount = 0;
             missingDirCount = 0;
             copiedCount = 0;
             foundCount = 0;
+            if (timeBuffer)
+                timeDiff = timeBufferDiff;
         }
 
-        private DirectoryInfo dtop = null;
-
+ 
         public void Start()
         {
             l.Info("Start scan " + DateTime.Now.ToString());
@@ -87,8 +99,7 @@ namespace DirectoryMirror
             walk(dtop);
             isRunning = false;
             l.Info("End scan " + DateTime.Now.ToString()); 
-            MakeStatus();
-            addMessage("End scan " + DateTime.Now.ToString());
+             addMessage("End scan " + DateTime.Now.ToString());
         }
 
         public void Stop()
@@ -124,48 +135,71 @@ namespace DirectoryMirror
 
         bool testCopy(FileInfo s, FileInfo d)
         {
+            // Simple case - destination dosn't exist
             if (!d.Exists)
                 return true;
 
+            // Check modification time (timeDiff includes any buffering )
             if (checkTime)
             {
                 var ts = s.LastWriteTimeUtc - d.LastWriteTimeUtc;
-                if (ts.TotalSeconds > 10)
-                    return true;
-            }
-            if ( checkSize || checkContent)
-            {
-                if (s.Length != d.Length)
+                if (ts.TotalSeconds > timeDiff)
                     return true;
             }
 
+            // Check size or simple content changed
+            if ( checkSize )
+            {
+                if (isBigger)
+                {
+                    if (s.Length > d.Length)
+                        return true;
+                }
+                else
+                {
+                    if (s.Length != d.Length)
+                        return true;
+                }
+            }
+
+            // Check content
             if (checkContent )
             {
-                UInt32 scrc = 0;
-                UInt32 dcrc = 0;
-                using (BinaryReader ss = new BinaryReader(File.Open(s.FullName, FileMode.Open)))
-                {
-                    int testSize = 100000;
-                    if (s.Length < testSize)
-                        testSize = (int)s.Length;
-                    byte[] content = ss.ReadBytes(testSize);
-                    scrc = Crc32.Compute(content);
-                }
-                using (BinaryReader ss = new BinaryReader(File.Open(d.FullName, FileMode.Open)))
-                {
-                    int testSize = 100000;
-                    if (d.Length < testSize)
-                        testSize = (int)d.Length;
-                    byte[] content = ss.ReadBytes(testSize);
-                    dcrc = Crc32.Compute(content);
-                }
-                if (dcrc != scrc)
+                if (s.Length > d.Length)
                     return true;
-
-
+                UInt32 scrc = getCrc(s);
+                UInt32 dcrc = getCrc(d);
+                return scrc != dcrc;
             }
+
+            // nothing to copy
             return false;
         }
+
+        uint getCrc(FileInfo s)
+        {
+            uint crc = 0;
+            using (BinaryReader ss = new BinaryReader(File.Open(s.FullName, FileMode.Open)))
+            {
+                int testSize = 0;
+                if (s.Length > Int32.MaxValue && !contentQuick)
+                {
+                    testSize = Int32.MaxValue;
+                    l.Warn("Content check of " + s.FullName + " restricted to " + Int32.MaxValue + " bytes");
+                }
+
+                if (contentQuick && quickCheckSize < s.Length)
+                    testSize = (int)quickCheckSize;
+
+                long start = s.Length - (long)testSize;
+                ss.BaseStream.Position = start;
+                byte[] content = ss.ReadBytes((int)testSize);
+                 crc = Crc32.Compute(content);
+            }
+            return crc;
+        }
+
+
         void processFile(DirectoryInfo dd, FileInfo f)
         {
             
@@ -184,7 +218,7 @@ namespace DirectoryMirror
 
         }
 
-        private void MakeStatus()
+        private void makeStatus()
         {
             StringBuilder s = new StringBuilder();
             if (aborted)
@@ -274,7 +308,6 @@ namespace DirectoryMirror
             string top = sd.Name;
             if (!isReserved(top))
             {
-                MakeStatus();
                 DirectoryInfo dd = processDirectory(sd);
 
                 if ( deleteMissing )
