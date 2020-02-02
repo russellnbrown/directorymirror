@@ -34,6 +34,12 @@ namespace DirectoryMirror
     // by calling 'Stop'. When finished 'IsRunning' returns false. The process is
     // run in a background thread so the GUI dosen't freeze up.
     //
+    // Note1 - Built with NetCore - this allows for long paths. Same methods in Net Framework will fail
+    // on some paths.
+    //
+    // Note2 - Come paths may contain reserver words ( COM etc ) which windows cant handle. In that case
+    // show a warning and continue - see isReserved
+    //
     class Copier : IDisposable
     {
 

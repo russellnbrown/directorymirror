@@ -31,9 +31,13 @@ namespace DirectoryMirror
     {
 
         private Copier copier = null;
+        private const string startText = "Start";
+        private const string abortText = "Abort";
 
         public MainWindow()
         {
+            // initialize logging and read settings
+
             Settings.Load("DirectoryMirror");
             l.To("mirrorbackup.log");
             l.MinConsoleLogLevel = l.Level.Debug;
@@ -58,13 +62,22 @@ namespace DirectoryMirror
             {
 
             }
+
+            // start timer for checking copier progress and GUI updates
             System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
-            dispatcherTimer.Tick += updateMainList;
+            dispatcherTimer.Tick += checkCopierProgressAndUpdateGUI;
             dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 500);
             dispatcherTimer.Start();
 
         }
-        private void updateMainList(object sender, EventArgs e)
+
+        //
+        // checkCopierProgressAndUpdateGUI
+        //
+        // get copier status and update GUI. Add any messages to console list,
+        // if copier is finished, reset the 'Start' button to show Start
+        //
+        private void checkCopierProgressAndUpdateGUI(object sender, EventArgs e)
         {
             if (copier != null)
             {
@@ -81,6 +94,11 @@ namespace DirectoryMirror
                 Status.Content = "...";
         }
 
+        //
+        // SelectDestBtn_Click
+        //
+        // called by select destination button. Show dialog & update deatination text box
+        //
         private void SelectDestBtn_Click(object sender, RoutedEventArgs e)
         {
             // NOTE - ookii dialog is used as WPF still dosn't have an inbuilt browser and 
@@ -93,6 +111,11 @@ namespace DirectoryMirror
                 DestinationTB.Text = dlg.SelectedPath;
         }
 
+        //
+        // SelectSourceBtn_Click
+        //
+        // called by select source button. Show dialog & update source text box
+        //
         private void SelectSourceBtn_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new Ookii.Dialogs.Wpf.VistaFolderBrowserDialog();
@@ -103,27 +126,35 @@ namespace DirectoryMirror
                 SourceTB.Text = dlg.SelectedPath;
         }
 
- 
+        //
+        // StartBtn_Click
+        //
+        // called by 'Start' button. This may be displaying 'Start' to start a scan or
+        // 'Abort' to stop one.
+        //
         private void StartBtn_Click(object sender, RoutedEventArgs e)
         {
-            if ((string)StartBtn.Content == "Abort" && copier != null)
+            // if abort, stop the copier, update status and rename button to 'Start'
+            if ((string)StartBtn.Content == abortText && copier != null)
             {
                 copier.Stop();
-                StartBtn.Content = "Start";
+                StartBtn.Content = startText;
                 Status.Content = copier.GetStatus();
                 return;
             }
 
+            // if 'Start' check source exists and create dest if nesessary
             if (!Directory.Exists(SourceTB.Text))
             {
                 MessageBox.Show(SourceTB.Text + " does not exist");
                 return;
             }
-            if (!Directory.Exists(SourceTB.Text))
+            if (!Directory.Exists(DestinationTB.Text))
             {
-                MessageBox.Show(DestinationTB.Text + " does not exist");
-                return;
+                Directory.CreateDirectory(DestinationTB.Text);
             }
+
+            // create copier process and run it
             copier = new Copier(SourceTB.Text, DestinationTB.Text, 
                                 (bool)CheckTimestampsCB.IsChecked,(bool)TimeBufferCB.IsChecked,
                                 (bool)CheckContentCB.IsChecked,(bool)CheckContentQuickCB.IsChecked, 
@@ -131,11 +162,15 @@ namespace DirectoryMirror
                                 (bool)RemInDestCB.IsChecked, (bool)DryRunCB.IsChecked);
             console.Items.Clear();
             copier.Start();
-            StartBtn.Content = "Abort";
-
-
+            // change function of start button to 'Abort'
+            StartBtn.Content = abortText;
         }
 
+        //
+        // Window_Closing
+        //
+        // when app closes, save settings
+        //
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             Settings.Set("RemIfNotInSrc",(bool)RemInDestCB.IsChecked);
@@ -145,14 +180,17 @@ namespace DirectoryMirror
             Settings.Set("DestDir", DestinationTB.Text);
             Settings.Set("DryRun", (bool)DryRunCB.IsChecked);
             Settings.Set("CheckSize", (bool)CheckSizeCB.IsChecked);
-
             Settings.Set("CheckSizeBigger", (bool)CheckSizeBiggerCB.IsChecked);
             Settings.Set("CheckContentQuick", (bool)CheckContentQuickCB.IsChecked );
             Settings.Set("TimeBuffer", (bool)TimeBufferCB.IsChecked);
-
             Settings.Save();
         }
 
+        //
+        // LogBtn_Click
+        //
+        // 'View Log' button pressed. Open log file with the default application
+        //
         private void LogBtn_Click(object sender, RoutedEventArgs e)
         {
             l.Pause();
@@ -163,18 +201,36 @@ namespace DirectoryMirror
             l.Resume();
         }
 
+        //
+        // CheckSizeBigger_Click
+        //
+        // if user clicks the 'copy if size is bigger' checkbox, make sure the copy on
+        // size checkbox is checked
+        //
         private void CheckSizeBigger_Click(object sender, RoutedEventArgs e)
         {
             if ((bool)CheckSizeBiggerCB.IsChecked)
                 CheckSizeCB.IsChecked = true;
         }
 
+        //
+        // CheckContentQuickCB_Click
+        //
+        // if user clicks the 'quick content check' checkbox, make sure the copy on
+        // content changed checkbox is checked
+        //
         private void CheckContentQuickCB_Click(object sender, RoutedEventArgs e)
         {
             if ( (bool)CheckContentQuickCB.IsChecked )
                 CheckContentCB.IsChecked = true;
         }
 
+        //
+        // TimeBufferCB_Click
+        //
+        // if user clicks the 'allow buffer' checkbox, make sure the copy on
+        // newer checkbox is checked
+        //
         private void TimeBufferCB_Click(object sender, RoutedEventArgs e)
         {
             if ((bool)TimeBufferCB.IsChecked)

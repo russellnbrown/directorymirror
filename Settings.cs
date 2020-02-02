@@ -23,14 +23,19 @@ using System.Threading;
 
 namespace CSLib
 {
-    // l - provide a basic console/file logging 
+    // Settings 
+    //
+    // Settings seem to keep on changing. This is a simple mechanism to keep settings as a key-value pair  
+    // in a text file in the app data directory.
+    //
     public class Settings
     {
-        
+        // keep settings in here
         private static SortedDictionary<string, String> settings = new SortedDictionary<string, String>();
-        private static string Name = "settings.dat";
+        // name used on load/save
+        private static string Name = ""; 
 
-  
+        // Get methond with type conversion
         public static String Get(string name, String dval)
         {
             if (settings.ContainsKey(name))
@@ -51,6 +56,7 @@ namespace CSLib
             return dval;
         }
 
+        // Set methods
         public static void Set(string name, String val)
         {
             settings[name] = val;
@@ -64,6 +70,7 @@ namespace CSLib
             settings[name] = val.ToString();
         }
 
+        // Load settings from disk
         public static void Load(string name)
         {
             Name = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -95,6 +102,7 @@ namespace CSLib
             }
         }
 
+        // Save settings to disk
         public static void Save()
         {
             try
