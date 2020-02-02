@@ -29,12 +29,15 @@ namespace DirectoryMirror
     /// </summary>
     public partial class MainWindow : Window
     {
-       
+
+        private Copier copier = null;
 
         public MainWindow()
         {
             Settings.Load("DirectoryMirror");
             l.To("mirrorbackup.log");
+            l.MinConsoleLogLevel = l.Level.Debug;
+            l.MinLogLevel = l.Level.Debug;
 
             InitializeComponent();
             try
@@ -68,7 +71,7 @@ namespace DirectoryMirror
                 Status.Content = copier.GetStatus();
                 if (!copier.IsRunning && (string)StartBtn.Content != "Start")
                     StartBtn.Content = "Start";
-                List<String> messages = copier.getMessages();
+                List<String> messages = copier.GetMessages();
                 foreach(String s in messages)
                 {
                     console.Items.Add(s);
@@ -100,8 +103,7 @@ namespace DirectoryMirror
                 SourceTB.Text = dlg.SelectedPath;
         }
 
-        private Copier copier = null;
-
+ 
         private void StartBtn_Click(object sender, RoutedEventArgs e)
         {
             if ((string)StartBtn.Content == "Abort" && copier != null)
@@ -123,7 +125,7 @@ namespace DirectoryMirror
                 return;
             }
             copier = new Copier(SourceTB.Text, DestinationTB.Text, 
-                                (bool)CheckTimestampsCB.IsChecked,(bool)TimeBufferCB.IsEnabled,
+                                (bool)CheckTimestampsCB.IsChecked,(bool)TimeBufferCB.IsChecked,
                                 (bool)CheckContentCB.IsChecked,(bool)CheckContentQuickCB.IsChecked, 
                                 (bool)CheckSizeCB.IsChecked, (bool)CheckSizeBiggerCB.IsChecked,
                                 (bool)RemInDestCB.IsChecked, (bool)DryRunCB.IsChecked);

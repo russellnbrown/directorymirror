@@ -20,13 +20,20 @@ using DamienG.Security.Cryptography;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace DirectoryMirror
 {
+    //
+    // class Copier
+    //
+    // Copier does the actual testing and copying of files from src to dest.
+    // A new instance is created each time the 'Start' button is pressed. It
+    // reports its status via 'GetStatus' and can be terminated before completipon
+    // by calling 'Stop'. When finished 'IsRunning' returns false. The process is
+    // run in a background thread so the GUI dosen't freeze up.
+    //
     class Copier : IDisposable
     {
 
@@ -44,8 +51,8 @@ namespace DirectoryMirror
         private bool checkContent = false;
         private bool checkSize = false;
         private bool deleteMissing = false;
-        private bool contentQuick = false;
-        private bool isBigger = false;
+        private bool useQuickContentCheck = false;
+        private bool onlyCopyIfBigger = false;
         private bool isRunning = true;
         private Thread workThread = null;
         private bool aborted = false;
@@ -54,193 +61,7 @@ namespace DirectoryMirror
         private const int timeBufferDiff = 120;
         private int timeDiff = 0;
         public bool IsRunning { get => isRunning; set => isRunning = value; }
-
-
-        public string GetStatus()
-        {
-            makeStatus();
-            return status;
-        }
-  
-        public Copier(string src, string dst, 
-                      bool checkTime, bool timeBuffer, 
-                      bool checkContent, bool contentQuick,
-                      bool checkSize, bool isBigger, 
-                      bool deleteMissing, bool dryRun)
-        {
-            this.src = src;
-            this.dst = dst;
-            this.dryRun = dryRun;
-            this.checkSize = checkSize;
-            this.checkContent = checkContent;
-            this.checkTime = checkTime;
-            this.deleteMissing = deleteMissing;
-            this.isBigger = isBigger;
-            sourceDirCount = 0;
-            missingDirCount = 0;
-            copiedCount = 0;
-            foundCount = 0;
-            if (timeBuffer)
-                timeDiff = timeBufferDiff;
-        }
-
- 
-        public void Start()
-        {
-            l.Info("Start scan " + DateTime.Now.ToString());
-            addMessage("Start scan " + DateTime.Now.ToString());
-            dtop = new DirectoryInfo(src);
-            workThread = new Thread(Run);
-            workThread.Start();
-        }
-
-        public void Run()
-        {
-            walk(dtop);
-            isRunning = false;
-            l.Info("End scan " + DateTime.Now.ToString()); 
-             addMessage("End scan " + DateTime.Now.ToString());
-        }
-
-        public void Stop()
-        {
-            if (workThread == null)
-                return;
-            aborted = true;
-            isRunning = false;
-            workThread.Join();
-            return;
-        }
-
-        DirectoryInfo processDirectory(DirectoryInfo d)
-        {
-            sourceDirCount++;
-            string path = d.FullName;
-            path = path.Substring(src.Length);
-            path = dst + path;
-            DirectoryInfo dd = new DirectoryInfo(path);
-            if (dd.Exists)
-            {
-                foundCount++;
-            }
-            else
-            {
-                missingDirCount++;
-                l.Info("Create destination dir " + dd.FullName);
-                if (!dryRun)
-                    dd.Create();
-            }
-            return dd;
-        }
-
-        bool testCopy(FileInfo s, FileInfo d)
-        {
-            // Simple case - destination dosn't exist
-            if (!d.Exists)
-                return true;
-
-            // Check modification time (timeDiff includes any buffering )
-            if (checkTime)
-            {
-                var ts = s.LastWriteTimeUtc - d.LastWriteTimeUtc;
-                if (ts.TotalSeconds > timeDiff)
-                    return true;
-            }
-
-            // Check size or simple content changed
-            if ( checkSize )
-            {
-                if (isBigger)
-                {
-                    if (s.Length > d.Length)
-                        return true;
-                }
-                else
-                {
-                    if (s.Length != d.Length)
-                        return true;
-                }
-            }
-
-            // Check content
-            if (checkContent )
-            {
-                if (s.Length > d.Length)
-                    return true;
-                UInt32 scrc = getCrc(s);
-                UInt32 dcrc = getCrc(d);
-                return scrc != dcrc;
-            }
-
-            // nothing to copy
-            return false;
-        }
-
-        uint getCrc(FileInfo s)
-        {
-            uint crc = 0;
-            using (BinaryReader ss = new BinaryReader(File.Open(s.FullName, FileMode.Open)))
-            {
-                int testSize = 0;
-                if (s.Length > Int32.MaxValue && !contentQuick)
-                {
-                    testSize = Int32.MaxValue;
-                    l.Warn("Content check of " + s.FullName + " restricted to " + Int32.MaxValue + " bytes");
-                }
-
-                if (contentQuick && quickCheckSize < s.Length)
-                    testSize = (int)quickCheckSize;
-
-                long start = s.Length - (long)testSize;
-                ss.BaseStream.Position = start;
-                byte[] content = ss.ReadBytes((int)testSize);
-                 crc = Crc32.Compute(content);
-            }
-            return crc;
-        }
-
-
-        void processFile(DirectoryInfo dd, FileInfo f)
-        {
-            
-            string dest = dd.FullName + System.IO.Path.DirectorySeparatorChar + f.Name;
-            FileInfo dfi = new FileInfo(dest);
-            bool copy = testCopy(f, dfi);
-            sourceFileCount++;
-            if (copy)
-            {
-                copiedCount++;
-                l.Info("Copy " + f.FullName + " to " + dest);
-                if (dryRun)
-                    return;
-                f.CopyTo(dest, true);
-            }
-
-        }
-
-        private void makeStatus()
-        {
-            StringBuilder s = new StringBuilder();
-            if (aborted)
-                s.Append("Aborted:");
-            else if (isRunning)
-                s.Append("Running:");
-            else
-                s.Append("Finished:");
-
-            s.Append(" Scanned ");
-            s.Append(sourceDirCount.ToString());
-            s.Append(" dirs, ");
-            s.Append(sourceFileCount.ToString());
-            s.Append(" files.  Missing dirs:");
-            s.Append(missingDirCount.ToString());
-            s.Append(", Copied:");
-            s.Append(copiedCount.ToString());
-            s.Append(", Deleted:");
-            s.Append(delCount.ToString());
-            status = s.ToString();
-        }
-
+        public List<String> messages = new List<string>();
         static string[] _reserved = new string[]
         {
                 "con",
@@ -268,20 +89,322 @@ namespace DirectoryMirror
                 "clock$"
         };
 
+        public Copier(string src, string dst, 
+                      bool checkTime, bool applyTimeBuffer, 
+                      bool checkContent, bool useQuickContentCheck,
+                      bool checkSize, bool onlyCopyIfBigger, 
+                      bool deleteMissing, bool dryRun)
+        {
+            this.src = src;
+            this.dst = dst;
+            this.dryRun = dryRun;
+            this.checkSize = checkSize;
+            this.checkContent = checkContent;
+            this.checkTime = checkTime;
+            this.deleteMissing = deleteMissing;
+            this.onlyCopyIfBigger = onlyCopyIfBigger;
+            this.useQuickContentCheck = useQuickContentCheck;
+            sourceDirCount = 0;
+            missingDirCount = 0;
+            copiedCount = 0;
+            foundCount = 0;
+            // if applyTimeBuffer is set then add timeBufferDist to the timeDiff
+            if (applyTimeBuffer)
+                timeDiff = timeBufferDiff;
+        }
+
+        //
+        // Start
+        //
+        // Called after instansiation to start the copy process. Starts the background
+        // thread
+        //
+        public void Start()
+        {
+            l.Info("Start scan " + DateTime.Now.ToString());
+            addMessage("Start scan " + DateTime.Now.ToString());
+            dtop = new DirectoryInfo(src);
+            workThread = new Thread(Run);
+            workThread.Start();
+        }
+
+        //
+        // Run
+        //
+        // Forms the background thread of the copy process.
+        //
+        public void Run()
+        {
+            walk(dtop);
+            isRunning = false;
+            l.Info("End scan " + DateTime.Now.ToString()); 
+             addMessage("End scan " + DateTime.Now.ToString());
+        }
+
+        //
+        // GetStatus
+        //
+        // Returns a status string for display on the GUI
+        //
+        public string GetStatus()
+        {
+            makeStatus();
+            return status;
+        }
+
+        //
+        // Stop
+        //
+        // Stops the background thread before normal finish
+        //
+        public void Stop()
+        {
+            if (workThread == null)
+                return;
+            aborted = true;
+            isRunning = false;
+            workThread.Join();
+            return;
+        }
+
+        //
+        // processDirectory
+        //
+        // This processes a single directory in the source directory tree
+        //
+        DirectoryInfo processDirectory(DirectoryInfo d)
+        {
+            sourceDirCount++;
+
+            // form the destination directory name by substituting
+            // destination root for source root
+
+            string path = d.FullName;
+            path = path.Substring(src.Length);
+            path = dst + path;
+            DirectoryInfo dd = new DirectoryInfo(path);
+
+            if (dd.Exists)
+                foundCount++;
+            else
+            {
+                missingDirCount++;
+                // create destination directory if it dosnt exist
+                l.Info("Create destination dir " + dd.FullName);
+                if (!dryRun)
+                    dd.Create();
+            }
+            return dd;
+        }
+
+        //
+        // testCopy
+        //
+        // Given a source and destination file, this will go through all the copy 
+        // parameters to determin if it needs to be copied
+        //
+        bool testCopy(FileInfo s, FileInfo d)
+        {
+            // Simple case - destination dosn't exist
+            if (!d.Exists)
+            {
+                l.Debug("  no destination exists, simple copy");
+                return true;
+            }
+
+            // Check modification time (timeDiff includes any buffering )
+            if (checkTime)
+            {
+                var ts = s.LastWriteTimeUtc - d.LastWriteTimeUtc;
+                l.Debug("  check times Src=" + s.LastAccessTimeUtc + ", Dst=" + d.LastAccessTimeUtc + ", secs=" + ts.TotalSeconds + ", diff=" + timeDiff);
+                if (ts.TotalSeconds > timeDiff)
+                {
+                    l.Debug("  check times secs=" + ts.TotalSeconds + " greater than " + timeDiff);
+                    return true;
+                }
+            }
+
+            // Check size or simple content changed
+            if (checkSize)
+            {
+                l.Debug("  check size Src=" + s.Length + ", Dst=" + d.Length);
+                if (onlyCopyIfBigger)
+                {
+                    if (s.Length > d.Length)
+                    {
+                        l.Debug("  is bigger check pass ");
+                        return true;
+                    }
+                    else
+                        l.Debug("  is bigger fail ");
+                }
+                else
+                {
+                    if (s.Length != d.Length)
+                    {
+                        l.Debug("  length different check pass ");
+                        return true;
+                    }
+                    l.Debug("  length different check fail ");
+                }
+            }
+
+            // Check content
+            if (checkContent )
+            {
+                // simple case, if sizes are different then the content is different
+                if (s.Length > d.Length)
+                {
+                    l.Debug("  content check simple pass");
+                    return true;
+                }
+
+                // get and compare the crc of the files
+                UInt32 scrc = getCrc(s);
+                UInt32 dcrc = getCrc(d);
+                l.Debug("  content crc src="+scrc+", dcrc="+dcrc);
+                if ( scrc != dcrc )
+                {
+                    l.Debug("  content pass");
+                    return true;
+                }
+                l.Debug("  content fail");
+            }
+            l.Debug("  all fail");
+            // nothing to copy
+            return false;
+        }
+
+        //
+        // getCrc
+        //
+        // we read the file (or a part of it ) into memory and 
+        // calculate a crc
+        //
+        uint getCrc(FileInfo s)
+        {
+  
+            uint crc = 0;
+            int maxSizeCheck = Int32.MaxValue;
+
+            // open the file
+            using (BinaryReader ss = new BinaryReader(File.Open(s.FullName, FileMode.Open)))
+            {
+                // read testSize bytes. limit to maxSizeCheck if greater than maxint in size.
+                int testSize = 0;
+                if (s.Length > (long)maxSizeCheck && !useQuickContentCheck)
+                {
+                    testSize = maxSizeCheck;
+                    l.Warn("Content check of " + s.FullName + " restricted to " + maxSizeCheck + " bytes");
+                }
+                else
+                    testSize = (int)s.Length;
+
+                // if quick check is enabled and testSize is bigger than
+                // quickCheckSize set it to quickCheckSize
+                if (useQuickContentCheck && quickCheckSize < s.Length)
+                    testSize = (int)quickCheckSize;
+
+                // read testSize bytes. we may need to adjust start if realing less than
+                // the full file size
+                long start = s.Length - (long)testSize;
+                ss.BaseStream.Position = start;
+                byte[] content = ss.ReadBytes((int)testSize);
+
+                // calc crc
+                crc = Crc32.Compute(content);
+            }
+            return crc;
+        }
+
+
+        //
+        // processFile
+        //
+        // this processes a single file in the source tree
+        // 
+        void processFile(DirectoryInfo dd, FileInfo f)
+        {
+            sourceFileCount++;
+
+            l.Debug("Considering " + f.FullName);
+
+            // work out destination name from dest dir and file name
+            string dest = dd.FullName + System.IO.Path.DirectorySeparatorChar + f.Name;
+            FileInfo dfi = new FileInfo(dest);
+
+            // see if the file needs to be copied
+            bool copy = testCopy(f, dfi);
+            l.Debug("Final decision is " + copy );
+
+            // copy file if tests passed 
+            if (copy)
+            {
+                copiedCount++;
+                l.Info("Copy " + f.FullName + " to " + dest);
+                // ignore if dryRun is set
+                if (dryRun)
+                    return;
+                f.CopyTo(dest, true);
+            }
+
+        }
+
+        //
+        // makeStatus
+        //
+        // create a status string to display on GUI
+        //
+        private void makeStatus()
+        {
+            StringBuilder s = new StringBuilder();
+            if (aborted)
+                s.Append("Aborted:");
+            else if (isRunning)
+                s.Append("Running:");
+            else
+                s.Append("Finished:");
+
+            s.Append(" Scanned ");
+            s.Append(sourceDirCount.ToString());
+            s.Append(" dirs, ");
+            s.Append(sourceFileCount.ToString());
+            s.Append(" files.  Missing dirs:");
+            s.Append(missingDirCount.ToString());
+            s.Append(", Copied:");
+            s.Append(copiedCount.ToString());
+            s.Append(", Deleted:");
+            s.Append(delCount.ToString());
+            status = s.ToString();
+        }
+
+        //
+        // isReserved
+        //
+        // return true if directory name is not valid in windows ( if we are copying
+        // from a linux filesystem for instance ). windows can;t handle it
+        //
         public static bool isReserved(string fn)
         {
-            string lc = fn.ToLower();
+            string lc = fn.ToLower(); // for comparison purposes
             char c1 = lc[0];
+            // quick test can eliminate most names
             if (!(c1 == 'c' || c1 == 'l' || c1 == 'n' || c1 == 'a' || c1 == 'p'))
                 return false;
+            // otherwize chack all names
             foreach (string s in _reserved)
                 if (lc == s)
                     return true;
             return false;
         }
-
-        public List<String> messages = new List<string>();
-        public List<String> getMessages()
+        //
+        // GetMessages/addMessage
+        //
+        // used to send/receive messages to the GUI as we cant display them directly form a 
+        // background thread. A timer process in the main GUI calls GetMessages periodically 
+        // to get and clear messages. more sophisticated mechanisms exist, but why complicate
+        // things?
+        public List<String> GetMessages()
         {
             List<String> rv;
             lock(messages)
@@ -300,6 +423,12 @@ namespace DirectoryMirror
             }
         }
 
+        //
+        // walk
+        //
+        // used to process source tree. calls processDirecrory, processFile and
+        // itself recursivly
+        //
         private void walk(DirectoryInfo sd)
         {
             FileInfo[] files = null;
