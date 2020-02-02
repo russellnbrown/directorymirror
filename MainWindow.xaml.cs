@@ -40,13 +40,27 @@ namespace DirectoryMirror
 
             Settings.Load("DirectoryMirror");
             l.To("mirrorbackup.log");
-            l.MinConsoleLogLevel = l.Level.Debug;
-            l.MinLogLevel = l.Level.Debug;
+
+            // get debugging level from settings. make sure it is written
+            // back to ensure it exists in the file to make editing possible
+            bool debuglevel = Settings.Get("Debug", false);
+            if (debuglevel)
+            {
+                l.MinConsoleLogLevel = l.Level.Debug;
+                l.MinLogLevel = l.Level.Debug;
+                Settings.Set("Debug", true);
+            }
+            else
+            {
+                l.MinConsoleLogLevel = l.Level.Info;
+                l.MinLogLevel = l.Level.Info;
+                Settings.Set("Debug", false);
+            }
 
             InitializeComponent();
             try
             {
-                DryRunCB.IsChecked = Settings.Get("DryRun",false);
+                DryRunCB.IsChecked = Settings.Get("DryRun", false);
                 CheckTimestampsCB.IsChecked = Settings.Get("CheckTimestamps", false);
                 CheckContentCB.IsChecked = Settings.Get("CheckContent", false);
                 RemInDestCB.IsChecked = Settings.Get("RemIfNotInSrc", false);

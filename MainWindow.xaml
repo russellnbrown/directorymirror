@@ -40,10 +40,10 @@
                 <CheckBox Content="File is Newer" Name="CheckTimestampsCB" ToolTip="Copy if file is newer" HorizontalAlignment="Left" VerticalAlignment="Top" RenderTransformOrigin="0.422,-1.017" Canvas.Left="88" Canvas.Top="10"/>
                 <CheckBox Content="Allow buffer" Name="TimeBufferCB" Click="TimeBufferCB_Click" ToolTip="Copy only if file is newer by more than 2 minutes (allows for different filesytems time resolution)" HorizontalAlignment="Left" VerticalAlignment="Top" RenderTransformOrigin="0.422,-1.017" Canvas.Left="88" Canvas.Top="31"/>
                 <CheckBox Content="Content Changed" Name="CheckContentCB"   ToolTip="Copy if file content has changed" RenderTransformOrigin="0.422,-1.017" Canvas.Left="224" Canvas.Top="11"/>
-                <CheckBox Content="Quick Check" Name="CheckContentQuickCB" Click="CheckContentQuickCB_Click" ToolTip="Only check middle 10KB of file" RenderTransformOrigin="0.422,-1.017" Canvas.Left="224" Canvas.Top="31"/>
-                <CheckBox Content="Check Size" Name="CheckSizeCB" RenderTransformOrigin="0.422,-1.017" Canvas.Left="391" Canvas.Top="11"/>
+                <CheckBox Content="Quick Check" Name="CheckContentQuickCB" Click="CheckContentQuickCB_Click" ToolTip="Only check final 100KB of file" RenderTransformOrigin="0.422,-1.017" Canvas.Left="224" Canvas.Top="31"/>
+                <CheckBox Content="Check Size" Name="CheckSizeCB" ToolTip="Copy if file size changed" RenderTransformOrigin="0.422,-1.017" Canvas.Left="391" Canvas.Top="11"/>
                 <CheckBox Content="Only if Bigger" Name="CheckSizeBiggerCB" Click="CheckSizeBigger_Click" ToolTip="Only copy if size is bigger" RenderTransformOrigin="0.422,-1.017" Canvas.Left="391" Canvas.Top="31"/>
-                <CheckBox Content="Remove in Destination if missing in Source" Name="RemInDestCB" RenderTransformOrigin="0.422,-1.017" Canvas.Left="511" Canvas.Top="11"/>
+                <CheckBox Content="Remove in Destination if missing in Source" ToolTip="Remove file from dest if no longer in source" Name="RemInDestCB" RenderTransformOrigin="0.422,-1.017" Canvas.Left="511" Canvas.Top="11"/>
             </Canvas>
         </GroupBox>
 
