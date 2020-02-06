@@ -1,0 +1,24 @@
+﻿<Window x:Class="DirectoryMirror.IgnoreListWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:dm="clr-namespace:DirectoryMirror"
+        mc:Ignorable="d"
+        Title="IgnoreListWindow" Height="450" Width="800">
+    
+ 
+
+    <Grid>
+        <DataGrid Name="fred" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+
+                <DataGridTextColumn Header="Pattern" Binding="{Binding pattern}" />
+                <DataGridCheckBoxColumn Header="Is Directory" Binding="{Binding isDir}" />
+                <DataGridComboBoxColumn Header="Is Excluded" SelectedValueBinding="{Binding isExcluded, Converter={StaticResource boolToIndexConverter}}" />
+                
+            </DataGrid.Columns>
+    </DataGrid>
+
+    </Grid>
+</Window>

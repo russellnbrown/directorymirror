@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DirectoryMirror"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"  Closing="Window_Closing">
+        Title="MainWindow" Height="484" Width="800"  Closing="Window_Closing">
     <Grid>
 
         <Grid.ColumnDefinitions>
@@ -15,7 +15,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="60" />
             <RowDefinition Height="60" />
-            <RowDefinition Height="80" />
+            <RowDefinition Height="120" />
             <RowDefinition Height="180" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
@@ -44,6 +44,8 @@
                 <CheckBox Content="Check Size" Name="CheckSizeCB" ToolTip="Copy if file size changed" RenderTransformOrigin="0.422,-1.017" Canvas.Left="391" Canvas.Top="11"/>
                 <CheckBox Content="Only if Bigger" Name="CheckSizeBiggerCB" Click="CheckSizeBigger_Click" ToolTip="Only copy if size is bigger" RenderTransformOrigin="0.422,-1.017" Canvas.Left="391" Canvas.Top="31"/>
                 <CheckBox Content="Remove in Destination if missing in Source" ToolTip="Remove file from dest if no longer in source" Name="RemInDestCB" RenderTransformOrigin="0.422,-1.017" Canvas.Left="511" Canvas.Top="11"/>
+                <CheckBox Content="Use Ignore List" ToolTip="Ignore files and folders in the Ignore List" Name="UseIgnoreCB" RenderTransformOrigin="0.422,-1.017" Canvas.Left="511" Canvas.Top="31"/>
+                <Button Name="IgnoreBtn"   Content="Ignore List" Click="IgnoreBtn_Click" Width="67" Canvas.Left="621" Canvas.Top="29"></Button>
             </Canvas>
         </GroupBox>
 

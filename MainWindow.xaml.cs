@@ -22,6 +22,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 
+
 namespace DirectoryMirror
 {
     /// <summary>
@@ -33,9 +34,16 @@ namespace DirectoryMirror
         private Copier copier = null;
         private const string startText = "Start";
         private const string abortText = "Abort";
+        public List<IgnoreItem> ignores = new List<IgnoreItem>();
+        private static MainWindow instance = null;
+        public static MainWindow Get { get => instance;  }
 
         public MainWindow()
         {
+            if (instance != null)
+                throw new Exception("Multiple instanciation of main window");
+            instance = this;
+
             // initialize logging and read settings
 
             Settings.Load("DirectoryMirror");
@@ -58,6 +66,11 @@ namespace DirectoryMirror
             }
 
             InitializeComponent();
+
+            ignores.Add(new IgnoreItem() { isDir = false, pattern = ".svn", isExcluded = true }); ;
+            ignores.Add(new IgnoreItem() { isDir = true, pattern = "Debug", isExcluded = false });
+            ignores.Add(new IgnoreItem() { isDir = false, pattern = "Release", isExcluded = true });
+
             try
             {
                 DryRunCB.IsChecked = Settings.Get("DryRun", false);
@@ -250,5 +263,24 @@ namespace DirectoryMirror
             if ((bool)TimeBufferCB.IsChecked)
                 CheckTimestampsCB.IsChecked = true;
         }
+
+        private void IgnoreBtn_Click(object sender, RoutedEventArgs e)
+        {
+            // Instantiate the dialog box
+            IgnoreListWindow dlg = new IgnoreListWindow();
+
+            // Configure the dialog box
+            dlg.Owner = this;
+            //dlg.DocumentMargin = this.documentTextBox.Margin;
+
+            // Open the dialog box modally 
+            dlg.ShowDialog();
+            l.Info("Number of ignores {0}", ignores.Count);
+        }
     }
+
+
+  
 }
+
+
