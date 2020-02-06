@@ -34,7 +34,8 @@ namespace DirectoryMirror
         private Copier copier = null;
         private const string startText = "Start";
         private const string abortText = "Abort";
-        public List<IgnoreItem> ignores = new List<IgnoreItem>();
+        public List<IgnoreItem> excludes = new List<IgnoreItem>();
+        public List<IgnoreItem> includes = new List<IgnoreItem>();
         private static MainWindow instance = null;
         public static MainWindow Get { get => instance;  }
 
@@ -67,9 +68,12 @@ namespace DirectoryMirror
 
             InitializeComponent();
 
-            ignores.Add(new IgnoreItem() { isDir = false, pattern = ".svn", isExcluded = true }); ;
-            ignores.Add(new IgnoreItem() { isDir = true, pattern = "Debug", isExcluded = false });
-            ignores.Add(new IgnoreItem() { isDir = false, pattern = "Release", isExcluded = true });
+            excludes.Add(new IgnoreItem() { isDir = false, pattern = ".svn" }); ;
+            excludes.Add(new IgnoreItem() { isDir = true, pattern = "Debug" });
+            excludes.Add(new IgnoreItem() { isDir = false, pattern = "Release" });
+            includes.Add(new IgnoreItem() { isDir = false, pattern = ".svn" }); ;
+            includes.Add(new IgnoreItem() { isDir = true, pattern = "Debug" });
+            includes.Add(new IgnoreItem() { isDir = false, pattern = "Release" });
 
             try
             {
@@ -275,7 +279,7 @@ namespace DirectoryMirror
 
             // Open the dialog box modally 
             dlg.ShowDialog();
-            l.Info("Number of ignores {0}", ignores.Count);
+            l.Info("Number of ignores {0}", includes.Count);
         }
     }
 

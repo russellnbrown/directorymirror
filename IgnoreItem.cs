@@ -8,6 +8,6 @@ namespace DirectoryMirror
     {
         public String pattern { get; set; }
         public Boolean isDir { get; set; }
-        public Boolean isExcluded { get; set; }
+    
     }
 }

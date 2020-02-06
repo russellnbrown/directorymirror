@@ -21,12 +21,14 @@ namespace DirectoryMirror
     public partial class IgnoreListWindow : Window
     {
 
-        public IgnoreListWindow()
+        
+    public IgnoreListWindow()
         {
-
+            
             InitializeComponent();
 
-            fred.ItemsSource = MainWindow.Get.ignores;
+            includes.ItemsSource = MainWindow.Get.includes;
+            excludes.ItemsSource = MainWindow.Get.excludes;
         }
     }
 

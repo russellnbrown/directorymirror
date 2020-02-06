@@ -5,20 +5,30 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:dm="clr-namespace:DirectoryMirror"
         mc:Ignorable="d"
-        Title="IgnoreListWindow" Height="450" Width="800">
+        Title="Filters" Height="450" Width="300">
     
  
 
     <Grid>
-        <DataGrid Name="fred" AutoGenerateColumns="False">
-            <DataGrid.Columns>
-
-                <DataGridTextColumn Header="Pattern" Binding="{Binding pattern}" />
-                <DataGridCheckBoxColumn Header="Is Directory" Binding="{Binding isDir}" />
-                <DataGridComboBoxColumn Header="Is Excluded" SelectedValueBinding="{Binding isExcluded, Converter={StaticResource boolToIndexConverter}}" />
-                
-            </DataGrid.Columns>
-    </DataGrid>
-
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Label Content="Included Items" />
+                <DataGrid Name="includes" AutoGenerateColumns="False" Margin="10,2,10,5">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Width="*" Header="Pattern" Binding="{Binding pattern}" />
+                        <DataGridCheckBoxColumn Width="80" Header="Is Directory" Binding="{Binding isDir}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+                <Label Content="Excluded Items" />
+                <DataGrid Name="excludes" AutoGenerateColumns="False" Margin="10,2,10,10">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Width="*" Header="Pattern" Binding="{Binding pattern}" />
+                        <DataGridCheckBoxColumn  Width="80" Header="Is Directory" Binding="{Binding isDir}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+                <Label Foreground="Blue" Content="To Delete: Select row and press delete button." />
+                <Label Foreground="Blue" Content="To Add: Type in empty box." />
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Window>
