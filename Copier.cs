@@ -40,7 +40,7 @@ namespace DirectoryMirror
     // Note2 - Come paths may contain reserver words ( COM etc ) which windows cant handle. In that case
     // show a warning and continue - see isReserved
     //
-    class Copier : IDisposable
+    class Copier 
     {
 
         private int sourceDirCount = 0;
@@ -70,8 +70,13 @@ namespace DirectoryMirror
         private int excludedDirs = 0;
         private int excludedFiles = 0;
 
+        // isRunning can be used to abort the copier thread
         public bool IsRunning { get => isRunning; set => isRunning = value; }
-        public List<String> messages = new List<string>();
+
+        // strings to be displayed on GUI in GUI thread ( GetMessage )
+        private List<String> messages = new List<string>();
+
+        // list of MS reserved directory names
         static string[] _reserved = new string[]
         {
                 "con",
@@ -100,10 +105,10 @@ namespace DirectoryMirror
                 "crap"
         };
 
-        public Copier(string src, string dst, 
-                      bool checkTime, bool applyTimeBuffer, 
+        public Copier(string src, string dst,
+                      bool checkTime, bool applyTimeBuffer,
                       bool checkContent, bool useQuickContentCheck,
-                      bool checkSize, bool onlyCopyIfBigger, 
+                      bool checkSize, bool onlyCopyIfBigger,
                       bool deleteMissing, bool useFilter, bool dryRun)
         {
             this.src = src;
@@ -149,8 +154,8 @@ namespace DirectoryMirror
         {
             walk(dtop);
             isRunning = false;
-            l.Info("End scan " + DateTime.Now.ToString()); 
-             addMessage("End scan " + DateTime.Now.ToString());
+            l.Info("End scan " + DateTime.Now.ToString());
+            addMessage("End scan " + DateTime.Now.ToString());
         }
 
         //
@@ -262,7 +267,7 @@ namespace DirectoryMirror
             }
 
             // Check content
-            if (checkContent )
+            if (checkContent)
             {
                 // simple case, if sizes are different then the content is different
                 if (s.Length > d.Length)
@@ -274,8 +279,8 @@ namespace DirectoryMirror
                 // get and compare the crc of the files
                 UInt32 scrc = getCrc(s);
                 UInt32 dcrc = getCrc(d);
-                l.Debug("  content crc src="+scrc+", dcrc="+dcrc);
-                if ( scrc != dcrc )
+                l.Debug("  content crc src=" + scrc + ", dcrc=" + dcrc);
+                if (scrc != dcrc)
                 {
                     l.Debug("  content pass");
                     return true;
@@ -295,7 +300,7 @@ namespace DirectoryMirror
         //
         uint getCrc(FileInfo s)
         {
-  
+
             uint crc = 0;
             int maxSizeCheck = Int32.MaxValue;
 
@@ -349,12 +354,12 @@ namespace DirectoryMirror
             {
                 excludedFiles++;
                 l.Info("File " + f.FullName + " failed wildcard test");
-                 return;
+                return;
             }
 
             // see if the file needs to be copied
             bool copy = testCopy(f, dfi);
-            l.Debug("Final decision is " + copy );
+            l.Debug("Final decision is " + copy);
 
             // copy file if tests passed 
             if (copy)
@@ -430,7 +435,7 @@ namespace DirectoryMirror
         public List<String> GetMessages()
         {
             List<String> rv;
-            lock(messages)
+            lock (messages)
             {
                 rv = new List<String>(messages);
                 messages.Clear();
@@ -440,18 +445,26 @@ namespace DirectoryMirror
 
         private void addMessage(String s)
         {
-            lock(messages)
+            lock (messages)
             {
                 messages.Add(s);
             }
         }
 
+        //
+        // passExcludeDir
+        //
+        // see if a directory is in the excluded directories list
+        //
         bool passExcludeDir(string s)
         {
+            // dont perform test if use filter is not set
             if (!useFilter)
                 return true;
+
+            // see if directory matches something in the list (case insensitive)
             s = s.ToLower();
-            foreach(var di in MainWindow.Get.excludedirs)
+            foreach (var di in MainWindow.Get.excludedirs)
             {
                 if (WildcardMatch.EqualsWildcard(s, di.pattern.ToLower()))
                 {
@@ -459,24 +472,38 @@ namespace DirectoryMirror
                     return false;
                 }
             }
-            l.Info("Dir {0} pass wildcard test ",s);
+            l.Info("Dir {0} pass wildcard test ", s);
             return true;
         }
+        //
+        // passExcludeIncludeFile
+        //
+        // see if the file name appears in the include or exclude list
+        //
         bool passExcludeIncludeFile(string s)
         {
+            // dont test if use filter not set
             if (!useFilter)
                 return true;
 
+            // ignore case in tests
             s = s.ToLower();
-            foreach (var di in MainWindow.Get.includes)
+
+            // if includes are set, only check against them
+            if (MainWindow.Get.includes.Count > 0)
             {
-                if (WildcardMatch.EqualsWildcard(s, di.pattern.ToLower()))
+                foreach (var di in MainWindow.Get.includes)
                 {
-                    l.Info("File {0} pass wildcard include test with {1}", s, di.pattern);
-                    return true;
+                    if (WildcardMatch.EqualsWildcard(s, di.pattern.ToLower()))
+                    {
+                        l.Info("File {0} pass wildcard include test with {1}", s, di.pattern);
+                        return true;
+                    }
                 }
+                return false;
             }
 
+            // otherwise see if it is in excludes
             foreach (var di in MainWindow.Get.excludes)
             {
                 if (WildcardMatch.EqualsWildcard(s, di.pattern.ToLower()))
@@ -502,7 +529,8 @@ namespace DirectoryMirror
 
             string top = sd.Name;
 
-            if ( !passExcludeDir(top) )
+            // see if directory in excluded dirs, quit if it is
+            if (!passExcludeDir(top))
             {
                 l.Info("Excluded dir {0}", top);
                 addMessage(String.Format("Can't process {0} in {1} - it is excluded ", top, sd.FullName));
@@ -510,28 +538,36 @@ namespace DirectoryMirror
                 return;
             }
 
+            // see if directory is a reserved word, quit if it is
             if (isReserved(top))
             {
                 excludedDirs++;
                 l.Error("Can't process directory " + top + " in path " + sd.FullName);
-                addMessage(String.Format("Can't process {0} in {1} - it is reserved name" , top , sd.FullName));
+                addMessage(String.Format("Can't process {0} in {1} - it is reserved name", top, sd.FullName));
                 return;
             }
 
+            // all passed, process it
             DirectoryInfo dd = processDirectory(sd);
 
-            if ( deleteMissing )
+            // if delete missing is set, get list of fines in destination and see if the equivalent 
+            // exists in the source, if not dtelte the one in the destination
+            if (deleteMissing)
             {
                 files = dd.GetFiles("*.*");
                 if (files != null)
                 {
                     foreach (System.IO.FileInfo fi in files)
                     {
-                        if (!isRunning)
+                        if (!isRunning)// exit if abort signalled
                             return;
+
+                        // continue if it exists
                         string src = sd.FullName + System.IO.Path.DirectorySeparatorChar + fi.Name;
                         if (File.Exists(src))
                             continue;
+
+                        // else delete it
                         delCount++;
                         l.Info("Deleting " + fi.FullName);
                         if (dryRun)
@@ -540,15 +576,13 @@ namespace DirectoryMirror
                     }
                 }
             }
-                
 
+            // now process files in the source
             try
             {
-  
 
-                // First, process all the files directly under this folder
                 files = sd.GetFiles("*.*");
-                if (!isRunning)
+                if (!isRunning)// exit if abort signalled
                     return;
 
                 if (files != null)
@@ -559,6 +593,8 @@ namespace DirectoryMirror
                         if (!isRunning)
                             return;
                     }
+
+                    // then any directories, call walk recursivly
                     subDirs = sd.GetDirectories();
                     foreach (DirectoryInfo dirInfo in subDirs)
                         walk(dirInfo);
@@ -575,16 +611,6 @@ namespace DirectoryMirror
                 l.Fatal("Directory not found: " + sd);
             }
         }
-  
-
-        
-
-
-        void IDisposable.Dispose()
-        {
-            if (workThread != null)
-                workThread.Join();
-            workThread = null;
-        }
     }
+  
 }
