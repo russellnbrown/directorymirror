@@ -349,7 +349,7 @@ namespace DirectoryMirror
             {
                 excludedFiles++;
                 l.Info("File " + f.FullName + " failed wildcard test");
-                return;
+                 return;
             }
 
             // see if the file needs to be copied
