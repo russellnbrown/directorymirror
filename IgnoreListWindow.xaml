@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:dm="clr-namespace:DirectoryMirror"
         mc:Ignorable="d"
-        Title="Filters" Height="450" Width="300">
+        Title="Filters" Height="450" Width="300" Icon="pack://application:,,,/Resources/filter.png">
     
  
 

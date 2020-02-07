@@ -68,12 +68,7 @@ namespace DirectoryMirror
 
             InitializeComponent();
 
-            excludes.Add(new IgnoreItem() { isDir = false, pattern = ".svn" }); ;
-            excludes.Add(new IgnoreItem() { isDir = true, pattern = "Debug" });
-            excludes.Add(new IgnoreItem() { isDir = false, pattern = "Release" });
-            includes.Add(new IgnoreItem() { isDir = false, pattern = ".svn" }); ;
-            includes.Add(new IgnoreItem() { isDir = true, pattern = "Debug" });
-            includes.Add(new IgnoreItem() { isDir = false, pattern = "Release" });
+  
 
             try
             {
@@ -88,6 +83,8 @@ namespace DirectoryMirror
                 CheckSizeBiggerCB.IsChecked = Settings.Get("CheckSizeBigger", false);
                 CheckContentQuickCB.IsChecked = Settings.Get("CheckContentQuick", false);
                 TimeBufferCB.IsChecked = Settings.Get("TimeBuffer", false);
+                excludes = IgnoreItem.fromCSVString(Settings.Get("Excludes", ""));
+                includes = IgnoreItem.fromCSVString(Settings.Get("Includes", ""));
             }
             catch
             {
@@ -214,6 +211,8 @@ namespace DirectoryMirror
             Settings.Set("CheckSizeBigger", (bool)CheckSizeBiggerCB.IsChecked);
             Settings.Set("CheckContentQuick", (bool)CheckContentQuickCB.IsChecked );
             Settings.Set("TimeBuffer", (bool)TimeBufferCB.IsChecked);
+            Settings.Set("Includes", IgnoreItem.toCSVString(includes));
+            Settings.Set("Excludes", IgnoreItem.toCSVString(excludes));
             Settings.Save();
         }
 

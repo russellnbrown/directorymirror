@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DirectoryMirror"
         mc:Ignorable="d"
-        Title="MainWindow" Height="484" Width="800"  Closing="Window_Closing">
+        Title="MainWindow" MinWidth="800" MinHeight="460" Height="484" Width="800"  Closing="Window_Closing">
     <Grid>
 
         <Grid.ColumnDefinitions>
@@ -15,23 +15,33 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="60" />
             <RowDefinition Height="60" />
-            <RowDefinition Height="120" />
-            <RowDefinition Height="180" />
+            <RowDefinition Height="80" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="40" />
         </Grid.RowDefinitions>
 
         <GroupBox Header="Source" Grid.Row="0" Grid.Column="0">
-            <Canvas>
-                <TextBox Name="SourceTB" Height="23" Canvas.Left="5" TextWrapping="Wrap" Text="TextBox" Canvas.Top="8" Width="674"/>
-                <Button Name="SelectSourceBtn" Click="SelectSourceBtn_Click" Content="Choose" Canvas.Left="697" Canvas.Top="7" Width="75"/>
-            </Canvas>
+            <DockPanel>
+                <Button Margin="5,5,5,5"  DockPanel.Dock="Right" Name="SelectSourceBtn" Click="SelectSourceBtn_Click"  Width="100">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Width="16" Height="16" Source="pack://application:,,,/Resources/FolderIcon.png" />
+                        <TextBlock Margin="3,0,0,0">Choose</TextBlock>
+                    </StackPanel>
+                </Button>
+                <TextBox Margin="5,5,5,5" Name="SourceTB"  TextWrapping="Wrap" Text="TextBox"  />
+            </DockPanel>
         </GroupBox>
 
         <GroupBox Header="Destination" Grid.Row="1" Grid.Column="0">
-            <Canvas>
-                <TextBox Name="DestinationTB" Height="23" Canvas.Left="5" TextWrapping="Wrap" Text="TextBox" Canvas.Top="8" Width="674"/>
-                <Button Name="SelectDestBtn" Content="Choose" Canvas.Left="697" Canvas.Top="7" Width="75" Click="SelectDestBtn_Click"/>
-            </Canvas>
+            <DockPanel>
+                <Button Margin="5,5,5,5"  DockPanel.Dock="Right" Name="SelectDestBtn" Click="SelectDestBtn_Click"  Width="100">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Width="16" Height="16" Source="pack://application:,,,/Resources/FolderIcon.png" />
+                        <TextBlock Margin="3,0,0,0">Choose</TextBlock>
+                    </StackPanel>
+                </Button>
+                <TextBox Margin="5,5,5,5" Name="DestinationTB" HorizontalAlignment="Stretch" TextWrapping="Wrap" Text="TextBox" />
+            </DockPanel>
         </GroupBox>
 
         <GroupBox Header="Options" Grid.Row="2" Grid.Column="0">
@@ -45,21 +55,38 @@
                 <CheckBox Content="Only if Bigger" Name="CheckSizeBiggerCB" Click="CheckSizeBigger_Click" ToolTip="Only copy if size is bigger" RenderTransformOrigin="0.422,-1.017" Canvas.Left="391" Canvas.Top="31"/>
                 <CheckBox Content="Remove in Destination if missing in Source" ToolTip="Remove file from dest if no longer in source" Name="RemInDestCB" RenderTransformOrigin="0.422,-1.017" Canvas.Left="511" Canvas.Top="11"/>
                 <CheckBox Content="Use Filters" ToolTip="Filter files and directories by name" Name="UseIgnoreCB" RenderTransformOrigin="0.422,-1.017" Canvas.Left="511" Canvas.Top="31"/>
-                <Button Name="IgnoreBtn"   Content="Filters" Click="IgnoreBtn_Click" Width="67" Canvas.Left="621" Canvas.Top="29"></Button>
-            </Canvas>
+             </Canvas>
         </GroupBox>
 
         <GroupBox Header="Actions" Grid.Row="3" Grid.Column="0">
-            <Canvas>
-                <Label Name="Status" Content="..." HorizontalAlignment="Left" Margin="8,4,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.589,-0.521" Width="765" Background="#FFFBF1F1"/>
-                <ListView Name="console" Canvas.Left="8" Canvas.Top="35"  Width="765" Height="117"/>
-            </Canvas>
+            <DockPanel>
+                <Label DockPanel.Dock="Top" Name="Status" Content="..."  Margin="5,5,5,5"  RenderTransformOrigin="0.589,-0.521" HorizontalAlignment="Stretch"  Background="#FFFBF1F1"/>
+                <ListView Name="console" HorizontalAlignment="Stretch"   Margin="5,5,5,5"  />
+            </DockPanel>
         </GroupBox>
 
-        <Canvas  Grid.Row="4" Grid.Column="0">
-            <Button Name="LogBtn" Click="LogBtn_Click" Content="View Log" Width="80" Canvas.Left="600" Canvas.Top="6"></Button>
-            <Button Name="StartBtn" Click="StartBtn_Click" Content="Start" Width="80" Canvas.Left="700" Canvas.Top="6"></Button>
-        </Canvas>
+        <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="0"  Height="30" HorizontalAlignment="Right">
+
+            <Button Margin="5,0,0,5" Name="IgnoreBtn" Click="IgnoreBtn_Click" Width="80" >
+                <StackPanel Orientation="Horizontal">
+                    <Image Width="16" Height="16" Source="pack://application:,,,/Resources/filter.png" />
+                    <TextBlock Margin="3,0,0,0">Filters</TextBlock>
+                </StackPanel>
+            </Button>
+            <Button Margin="5,0,0,5" Name="LogBtn" Click="LogBtn_Click"  Width="80" >
+                <StackPanel Orientation="Horizontal">
+                    <Image Width="16" Height="16" Source="pack://application:,,,/Resources/log.png" />
+                    <TextBlock Margin="3,0,0,0">View Log</TextBlock>
+                </StackPanel>
+            </Button>
+            <Button Margin="5,0,10,5" Name="StartBtn" Click="StartBtn_Click"  Width="80" >
+                <StackPanel Orientation="Horizontal">
+                    <Image Width="16" Height="16" Source="pack://application:,,,/Resources/run.png" />
+                    <TextBlock Margin="3,0,0,0">Start</TextBlock>
+                </StackPanel>
+            </Button>
+            
+        </StackPanel>
 
     </Grid>
 </Window>
