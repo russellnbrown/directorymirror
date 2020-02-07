@@ -29,6 +29,7 @@ namespace DirectoryMirror
 
             includes.ItemsSource = MainWindow.Get.includes;
             excludes.ItemsSource = MainWindow.Get.excludes;
+            excludedirs.ItemsSource = MainWindow.Get.excludedirs;
         }
     }
 

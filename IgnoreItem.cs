@@ -7,10 +7,9 @@ namespace DirectoryMirror
 {
     public class IgnoreItem
     {
-        public IgnoreItem(string pattern, bool isDir)
+        public IgnoreItem(string pattern)
         {
             this.pattern = pattern;
-            this.isDir = isDir;
         }
 
         public IgnoreItem()
@@ -19,17 +18,17 @@ namespace DirectoryMirror
         }
 
         public String pattern { get; set; }
-        public Boolean isDir { get; set; }
 
         public static String toCSVString(List<IgnoreItem> i)
         {
             StringBuilder sb = new StringBuilder();
             foreach(var itm in i)
             {
-                sb.Append(itm.pattern);
-                sb.Append(",");
-                sb.Append(itm.isDir);
-                sb.Append(",");
+                if (itm.pattern.Length > 0)
+                {
+                    sb.Append(itm.pattern);
+                    sb.Append(",");
+                }
             }
             return sb.ToString();
         }
@@ -38,9 +37,10 @@ namespace DirectoryMirror
             char[] seps = { ',' };
             String[] parts = s.Split(seps);
             List<IgnoreItem> ii = new List<IgnoreItem>();
-            for(int sx=0; sx<parts.Length-1; sx+=2)
+            for(int sx=0; sx<parts.Length-1; sx++)
             {
-                ii.Add(new IgnoreItem(parts[sx], Boolean.Parse(parts[sx + 1])));
+                if ( parts[sx].Length > 0 ) 
+                    ii.Add(new IgnoreItem(parts[sx]));
             }
             return ii;
         }

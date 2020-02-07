@@ -5,25 +5,29 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:dm="clr-namespace:DirectoryMirror"
         mc:Ignorable="d"
-        Title="Filters" Height="450" Width="300" Icon="pack://application:,,,/Resources/filter.png">
+        Title="Filters" Height="650" Width="300" Icon="pack://application:,,,/Resources/filter.png">
     
  
 
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <Label Content="Included Items" />
+                <Label Content="Included Files" />
                 <DataGrid Name="includes" AutoGenerateColumns="False" Margin="10,2,10,5">
                     <DataGrid.Columns>
                         <DataGridTextColumn Width="*" Header="Pattern" Binding="{Binding pattern}" />
-                        <DataGridCheckBoxColumn Width="80" Header="Is Directory" Binding="{Binding isDir}" />
                     </DataGrid.Columns>
                 </DataGrid>
-                <Label Content="Excluded Items" />
+                <Label Content="Excluded Files" />
                 <DataGrid Name="excludes" AutoGenerateColumns="False" Margin="10,2,10,10">
                     <DataGrid.Columns>
                         <DataGridTextColumn Width="*" Header="Pattern" Binding="{Binding pattern}" />
-                        <DataGridCheckBoxColumn  Width="80" Header="Is Directory" Binding="{Binding isDir}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+                <Label Content="Excluded Directories" />
+                <DataGrid Name="excludedirs" AutoGenerateColumns="False" Margin="10,2,10,10">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Width="*" Header="Pattern" Binding="{Binding pattern}" />
                     </DataGrid.Columns>
                 </DataGrid>
                 <Label Foreground="Blue" Content="To Delete: Select row and press delete button." />

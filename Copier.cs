@@ -59,6 +59,7 @@ namespace DirectoryMirror
         private bool deleteMissing = false;
         private bool useQuickContentCheck = false;
         private bool onlyCopyIfBigger = false;
+        private bool useFilter = false;
         private bool isRunning = true;
         private Thread workThread = null;
         private bool aborted = false;
@@ -66,6 +67,9 @@ namespace DirectoryMirror
         private const int quickCheckSize = 100000;
         private const int timeBufferDiff = 120;
         private int timeDiff = 0;
+        private int excludedDirs = 0;
+        private int excludedFiles = 0;
+
         public bool IsRunning { get => isRunning; set => isRunning = value; }
         public List<String> messages = new List<string>();
         static string[] _reserved = new string[]
@@ -92,14 +96,15 @@ namespace DirectoryMirror
                 "lpt7",
                 "lpt8",
                 "lpt9",
-                "clock$"
+                "clock$",
+                "crap"
         };
 
         public Copier(string src, string dst, 
                       bool checkTime, bool applyTimeBuffer, 
                       bool checkContent, bool useQuickContentCheck,
                       bool checkSize, bool onlyCopyIfBigger, 
-                      bool deleteMissing, bool dryRun)
+                      bool deleteMissing, bool useFilter, bool dryRun)
         {
             this.src = src;
             this.dst = dst;
@@ -110,6 +115,7 @@ namespace DirectoryMirror
             this.deleteMissing = deleteMissing;
             this.onlyCopyIfBigger = onlyCopyIfBigger;
             this.useQuickContentCheck = useQuickContentCheck;
+            this.useFilter = useFilter;
             sourceDirCount = 0;
             missingDirCount = 0;
             copiedCount = 0;
@@ -339,6 +345,13 @@ namespace DirectoryMirror
             string dest = dd.FullName + System.IO.Path.DirectorySeparatorChar + f.Name;
             FileInfo dfi = new FileInfo(dest);
 
+            if (!passExcludeIncludeFile(f.Name))
+            {
+                excludedFiles++;
+                l.Info("File " + f.FullName + " failed wildcard test");
+                return;
+            }
+
             // see if the file needs to be copied
             bool copy = testCopy(f, dfi);
             l.Debug("Final decision is " + copy );
@@ -381,6 +394,10 @@ namespace DirectoryMirror
             s.Append(copiedCount.ToString());
             s.Append(", Deleted:");
             s.Append(delCount.ToString());
+            s.Append(", Excluded Dirs:");
+            s.Append(excludedDirs.ToString());
+            s.Append(", Files:");
+            s.Append(excludedFiles.ToString());
             status = s.ToString();
         }
 
@@ -429,6 +446,49 @@ namespace DirectoryMirror
             }
         }
 
+        bool passExcludeDir(string s)
+        {
+            if (!useFilter)
+                return true;
+            s = s.ToLower();
+            foreach(var di in MainWindow.Get.excludedirs)
+            {
+                if (WildcardMatch.EqualsWildcard(s, di.pattern.ToLower()))
+                {
+                    l.Info("Dir {0} faild wildcard test with {1}", s, di.pattern);
+                    return false;
+                }
+            }
+            l.Info("Dir {0} pass wildcard test ",s);
+            return true;
+        }
+        bool passExcludeIncludeFile(string s)
+        {
+            if (!useFilter)
+                return true;
+
+            s = s.ToLower();
+            foreach (var di in MainWindow.Get.includes)
+            {
+                if (WildcardMatch.EqualsWildcard(s, di.pattern.ToLower()))
+                {
+                    l.Info("File {0} pass wildcard include test with {1}", s, di.pattern);
+                    return true;
+                }
+            }
+
+            foreach (var di in MainWindow.Get.excludes)
+            {
+                if (WildcardMatch.EqualsWildcard(s, di.pattern.ToLower()))
+                {
+                    l.Info("File {0} failed wildcard test with {1}", s, di.pattern);
+                    return false;
+                }
+            }
+            l.Info("File {0} pass wildcard tests ", s);
+            return true;
+        }
+
         //
         // walk
         //
@@ -441,75 +501,83 @@ namespace DirectoryMirror
             DirectoryInfo[] subDirs = null;
 
             string top = sd.Name;
-            if (!isReserved(top))
+
+            if ( !passExcludeDir(top) )
             {
-                DirectoryInfo dd = processDirectory(sd);
-
-                if ( deleteMissing )
-                {
-                    files = dd.GetFiles("*.*");
-                    if (files != null)
-                    {
-                        foreach (System.IO.FileInfo fi in files)
-                        {
-                            if (!isRunning)
-                                return;
-                            string src = sd.FullName + System.IO.Path.DirectorySeparatorChar + fi.Name;
-                            if (File.Exists(src))
-                                continue;
-                            delCount++;
-                            l.Info("Deleting " + fi.FullName);
-                            if (dryRun)
-                                continue;
-                            fi.Delete();
-                        }
-                    }
-                }
-                
-
-                try
-                {
-  
-
-                    // First, process all the files directly under this folder
-                    files = sd.GetFiles("*.*");
-                    if (!isRunning)
-                        return;
-
-                    if (files != null)
-                    {
-                        foreach (System.IO.FileInfo fi in files)
-                        {
-                            processFile(dd, fi);
-                            if (!isRunning)
-                                return;
-                        }
-                        subDirs = sd.GetDirectories();
-                        foreach (DirectoryInfo dirInfo in subDirs)
-                            walk(dirInfo);
-                    }
-                }
-                catch (UnauthorizedAccessException e)
-                {
-                    l.Error(e.Message);
-                    addMessage(String.Format("Can't process {0} - access error.", top));
-
-                }
-                catch (DirectoryNotFoundException e)
-                {
-                    l.Fatal("Directory not found: " + sd);
-                }
+                l.Info("Excluded dir {0}", top);
+                addMessage(String.Format("Can't process {0} in {1} - it is excluded ", top, sd.FullName));
+                excludedDirs++;
+                return;
             }
-            else 
-            { 
+
+            if (isReserved(top))
+            {
+                excludedDirs++;
                 l.Error("Can't process directory " + top + " in path " + sd.FullName);
                 addMessage(String.Format("Can't process {0} in {1} - it is reserved name" , top , sd.FullName));
-
+                return;
             }
 
+            DirectoryInfo dd = processDirectory(sd);
 
+            if ( deleteMissing )
+            {
+                files = dd.GetFiles("*.*");
+                if (files != null)
+                {
+                    foreach (System.IO.FileInfo fi in files)
+                    {
+                        if (!isRunning)
+                            return;
+                        string src = sd.FullName + System.IO.Path.DirectorySeparatorChar + fi.Name;
+                        if (File.Exists(src))
+                            continue;
+                        delCount++;
+                        l.Info("Deleting " + fi.FullName);
+                        if (dryRun)
+                            continue;
+                        fi.Delete();
+                    }
+                }
+            }
+                
 
+            try
+            {
+  
+
+                // First, process all the files directly under this folder
+                files = sd.GetFiles("*.*");
+                if (!isRunning)
+                    return;
+
+                if (files != null)
+                {
+                    foreach (System.IO.FileInfo fi in files)
+                    {
+                        processFile(dd, fi);
+                        if (!isRunning)
+                            return;
+                    }
+                    subDirs = sd.GetDirectories();
+                    foreach (DirectoryInfo dirInfo in subDirs)
+                        walk(dirInfo);
+                }
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                l.Error(e.Message);
+                addMessage(String.Format("Can't process {0} - access error.", top));
+
+            }
+            catch (DirectoryNotFoundException e)
+            {
+                l.Fatal("Directory not found: " + sd);
+            }
         }
+  
+
+        
 
 
         void IDisposable.Dispose()

@@ -35,6 +35,7 @@ namespace DirectoryMirror
         private const string startText = "Start";
         private const string abortText = "Abort";
         public List<IgnoreItem> excludes = new List<IgnoreItem>();
+        public List<IgnoreItem> excludedirs = new List<IgnoreItem>();
         public List<IgnoreItem> includes = new List<IgnoreItem>();
         private static MainWindow instance = null;
         public static MainWindow Get { get => instance;  }
@@ -72,7 +73,7 @@ namespace DirectoryMirror
 
             try
             {
-                DryRunCB.IsChecked = Settings.Get("DryRun", false);
+                DryRunCB.IsChecked = Settings.Get("DryRun", true);
                 CheckTimestampsCB.IsChecked = Settings.Get("CheckTimestamps", false);
                 CheckContentCB.IsChecked = Settings.Get("CheckContent", false);
                 RemInDestCB.IsChecked = Settings.Get("RemIfNotInSrc", false);
@@ -83,8 +84,11 @@ namespace DirectoryMirror
                 CheckSizeBiggerCB.IsChecked = Settings.Get("CheckSizeBigger", false);
                 CheckContentQuickCB.IsChecked = Settings.Get("CheckContentQuick", false);
                 TimeBufferCB.IsChecked = Settings.Get("TimeBuffer", false);
+                UseIgnoreCB.IsChecked = Settings.Get("UseFilter", false);
+
                 excludes = IgnoreItem.fromCSVString(Settings.Get("Excludes", ""));
                 includes = IgnoreItem.fromCSVString(Settings.Get("Includes", ""));
+                excludedirs = IgnoreItem.fromCSVString(Settings.Get("ExcludeDirs", ""));
             }
             catch
             {
@@ -110,8 +114,8 @@ namespace DirectoryMirror
             if (copier != null)
             {
                 Status.Content = copier.GetStatus();
-                if (!copier.IsRunning && (string)StartBtn.Content != "Start")
-                    StartBtn.Content = "Start";
+                if (!copier.IsRunning && startBtnText.Text != "Start")
+                    startBtnText.Text = "Start";
                 List<String> messages = copier.GetMessages();
                 foreach(String s in messages)
                 {
@@ -163,10 +167,10 @@ namespace DirectoryMirror
         private void StartBtn_Click(object sender, RoutedEventArgs e)
         {
             // if abort, stop the copier, update status and rename button to 'Start'
-            if ((string)StartBtn.Content == abortText && copier != null)
+            if (startBtnText.Text == abortText && copier != null)
             {
                 copier.Stop();
-                StartBtn.Content = startText;
+                startBtnText.Text = startText;
                 Status.Content = copier.GetStatus();
                 return;
             }
@@ -187,11 +191,11 @@ namespace DirectoryMirror
                                 (bool)CheckTimestampsCB.IsChecked,(bool)TimeBufferCB.IsChecked,
                                 (bool)CheckContentCB.IsChecked,(bool)CheckContentQuickCB.IsChecked, 
                                 (bool)CheckSizeCB.IsChecked, (bool)CheckSizeBiggerCB.IsChecked,
-                                (bool)RemInDestCB.IsChecked, (bool)DryRunCB.IsChecked);
+                                (bool)RemInDestCB.IsChecked, (bool)UseIgnoreCB.IsChecked, (bool)DryRunCB.IsChecked);
             console.Items.Clear();
             copier.Start();
             // change function of start button to 'Abort'
-            StartBtn.Content = abortText;
+            startBtnText.Text = abortText;
         }
 
         //
@@ -211,8 +215,10 @@ namespace DirectoryMirror
             Settings.Set("CheckSizeBigger", (bool)CheckSizeBiggerCB.IsChecked);
             Settings.Set("CheckContentQuick", (bool)CheckContentQuickCB.IsChecked );
             Settings.Set("TimeBuffer", (bool)TimeBufferCB.IsChecked);
+            Settings.Set("UseFilter", (bool)UseIgnoreCB.IsChecked);
             Settings.Set("Includes", IgnoreItem.toCSVString(includes));
             Settings.Set("Excludes", IgnoreItem.toCSVString(excludes));
+            Settings.Set("ExcludeDirs", IgnoreItem.toCSVString(excludedirs));
             Settings.Save();
         }
 

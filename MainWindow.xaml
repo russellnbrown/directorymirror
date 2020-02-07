@@ -82,7 +82,7 @@
             <Button Margin="5,0,10,5" Name="StartBtn" Click="StartBtn_Click"  Width="80" >
                 <StackPanel Orientation="Horizontal">
                     <Image Width="16" Height="16" Source="pack://application:,,,/Resources/run.png" />
-                    <TextBlock Margin="3,0,0,0">Start</TextBlock>
+                    <TextBlock Name="startBtnText" Margin="3,0,0,0">Start</TextBlock>
                 </StackPanel>
             </Button>
             
