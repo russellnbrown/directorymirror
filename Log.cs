@@ -80,12 +80,13 @@ namespace CSLib
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static void WriteLine(Level lvl, string l)
         {
+            if (lvl < minLevelLogged)
+                return;
+
             lock (logs)
             {
 
-                if (lvl < minLevelLogged)
-                    return;
-
+  
                 Int32 tix = Thread.CurrentThread.ManagedThreadId;
 
                 string lt = "U";

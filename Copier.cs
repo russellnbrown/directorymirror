@@ -353,7 +353,7 @@ namespace DirectoryMirror
             if (!passExcludeIncludeFile(f.Name))
             {
                 excludedFiles++;
-                l.Info("File " + f.FullName + " failed wildcard test");
+                l.Debug("File " + f.FullName + " failed wildcard test");
                 return;
             }
 
@@ -365,7 +365,7 @@ namespace DirectoryMirror
             if (copy)
             {
                 copiedCount++;
-                l.Info("Copy " + f.FullName + " to " + dest);
+                l.Debug("Copy " + f.FullName + " to " + dest);
                 // ignore if dryRun is set
                 if (dryRun)
                     return;
@@ -468,13 +468,14 @@ namespace DirectoryMirror
             {
                 if (WildcardMatch.EqualsWildcard(s, di.pattern.ToLower()))
                 {
-                    l.Info("Dir {0} faild wildcard test with {1}", s, di.pattern);
+                    l.Debug("Dir {0} faild wildcard test with {1}", s, di.pattern);
                     return false;
                 }
             }
-            l.Info("Dir {0} pass wildcard test ", s);
+            l.Debug("Dir {0} pass wildcard test ", s);
             return true;
         }
+
         //
         // passExcludeIncludeFile
         //
@@ -496,10 +497,11 @@ namespace DirectoryMirror
                 {
                     if (WildcardMatch.EqualsWildcard(s, di.pattern.ToLower()))
                     {
-                        l.Info("File {0} pass wildcard include test with {1}", s, di.pattern);
+                        l.Debug("File {0} pass wildcard include test with {1}", s, di.pattern);
                         return true;
                     }
                 }
+                l.Debug("File {0} failed wildcard include test ", s );
                 return false;
             }
 
@@ -508,11 +510,11 @@ namespace DirectoryMirror
             {
                 if (WildcardMatch.EqualsWildcard(s, di.pattern.ToLower()))
                 {
-                    l.Info("File {0} failed wildcard test with {1}", s, di.pattern);
+                    l.Debug("File {0} failed wildcard test with {1}", s, di.pattern);
                     return false;
                 }
             }
-            l.Info("File {0} pass wildcard tests ", s);
+            l.Debug("File {0} pass wildcard tests ", s);
             return true;
         }
 
@@ -547,39 +549,39 @@ namespace DirectoryMirror
                 return;
             }
 
-            // all passed, process it
-            DirectoryInfo dd = processDirectory(sd);
-
-            // if delete missing is set, get list of fines in destination and see if the equivalent 
-            // exists in the source, if not dtelte the one in the destination
-            if (deleteMissing)
-            {
-                files = dd.GetFiles("*.*");
-                if (files != null)
-                {
-                    foreach (System.IO.FileInfo fi in files)
-                    {
-                        if (!isRunning)// exit if abort signalled
-                            return;
-
-                        // continue if it exists
-                        string src = sd.FullName + System.IO.Path.DirectorySeparatorChar + fi.Name;
-                        if (File.Exists(src))
-                            continue;
-
-                        // else delete it
-                        delCount++;
-                        l.Info("Deleting " + fi.FullName);
-                        if (dryRun)
-                            continue;
-                        fi.Delete();
-                    }
-                }
-            }
-
-            // now process files in the source
             try
             {
+                // all passed, process it
+                DirectoryInfo dd = processDirectory(sd);
+
+                // if delete missing is set, get list of fines in destination and see if the equivalent 
+                // exists in the source, if not dtelte the one in the destination
+                if (deleteMissing)
+                {
+                    files = dd.GetFiles("*.*");
+                    if (files != null)
+                    {
+                        foreach (System.IO.FileInfo fi in files)
+                        {
+                            if (!isRunning)// exit if abort signalled
+                                return;
+
+                            // continue if it exists
+                            string src = sd.FullName + System.IO.Path.DirectorySeparatorChar + fi.Name;
+                            if (File.Exists(src))
+                                continue;
+
+                            // else delete it
+                            delCount++;
+                            l.Info("Deleting " + fi.FullName);
+                            if (dryRun)
+                                continue;
+                            fi.Delete();
+                        }
+                    }
+                }
+
+                // now process files in the source
 
                 files = sd.GetFiles("*.*");
                 if (!isRunning)// exit if abort signalled
@@ -612,5 +614,5 @@ namespace DirectoryMirror
             }
         }
     }
-  
+
 }
