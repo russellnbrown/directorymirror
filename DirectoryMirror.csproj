@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\copy.ico" />
     <None Remove="Resources\copy48.png" />
     <None Remove="Resources\filter.png" />
     <None Remove="Resources\FolderIcon.png" />
@@ -44,9 +43,6 @@
 
 
   <ItemGroup>
-    <Resource Include="Resources\copy.ico">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
     <Resource Include="Resources\filter.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
