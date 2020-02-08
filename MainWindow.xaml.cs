@@ -178,7 +178,7 @@ namespace DirectoryMirror
             // if 'Start' check source exists and create dest if nesessary
             if (!Directory.Exists(SourceTB.Text))
             {
-                MessageBox.Show(SourceTB.Text + " does not exist");
+                MessageBox.Show(SourceTB.Text + " does not exist", "Error", MessageBoxButton.OK);
                 return;
             }
             if (!Directory.Exists(DestinationTB.Text))
