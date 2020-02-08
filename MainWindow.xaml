@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DirectoryMirror"
         mc:Ignorable="d"
-        Title="MainWindow" MinWidth="800" MinHeight="460" Height="484" Width="800"  Closing="Window_Closing">
+        Title="Directory Mirror" MinWidth="800" MinHeight="460" Height="484" Width="800"  Closing="Window_Closing">
     <Grid>
 
         <Grid.ColumnDefinitions>
