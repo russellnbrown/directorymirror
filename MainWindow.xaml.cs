@@ -74,7 +74,7 @@ namespace DirectoryMirror
             try
             {
                 DryRunCB.IsChecked = Settings.Get("DryRun", true);
-                CheckTimestampsCB.IsChecked = Settings.Get("CheckTimestamps", false);
+                //CheckTimestampsCB.IsChecked = Settings.Get("CheckTimestamps", false);
                 CheckContentCB.IsChecked = Settings.Get("CheckContent", false);
                 RemInDestCB.IsChecked = Settings.Get("RemIfNotInSrc", false);
                 SourceTB.Text = Settings.Get("SourceDir", "");
@@ -188,7 +188,7 @@ namespace DirectoryMirror
 
             // create copier process and run it
             copier = new Copier(SourceTB.Text, DestinationTB.Text, 
-                                (bool)CheckTimestampsCB.IsChecked,(bool)TimeBufferCB.IsChecked,
+                                true,(bool)TimeBufferCB.IsChecked,
                                 (bool)CheckContentCB.IsChecked,(bool)CheckContentQuickCB.IsChecked, 
                                 (bool)CheckSizeCB.IsChecked, (bool)CheckSizeBiggerCB.IsChecked,
                                 (bool)RemInDestCB.IsChecked, (bool)UseIgnoreCB.IsChecked, (bool)DryRunCB.IsChecked);
@@ -206,7 +206,7 @@ namespace DirectoryMirror
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             Settings.Set("RemIfNotInSrc",(bool)RemInDestCB.IsChecked);
-            Settings.Set("CheckTimestamps", (bool)CheckTimestampsCB.IsChecked);
+            //Settings.Set("CheckTimestamps", (bool)CheckTimestampsCB.IsChecked);
             Settings.Set("CheckContent", (bool)CheckContentCB.IsChecked);
             Settings.Set("SourceDir", SourceTB.Text);
             Settings.Set("DestDir", DestinationTB.Text);
@@ -269,8 +269,7 @@ namespace DirectoryMirror
         //
         private void TimeBufferCB_Click(object sender, RoutedEventArgs e)
         {
-            if ((bool)TimeBufferCB.IsChecked)
-                CheckTimestampsCB.IsChecked = true;
+           
         }
 
         private void IgnoreBtn_Click(object sender, RoutedEventArgs e)

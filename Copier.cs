@@ -230,15 +230,21 @@ namespace DirectoryMirror
             }
 
             // Check modification time (timeDiff includes any buffering )
-            if (checkTime)
-            {
-                var ts = s.LastWriteTimeUtc - d.LastWriteTimeUtc;
+            var ts = s.LastWriteTimeUtc - d.LastWriteTimeUtc;
+            bool newer = ts.TotalSeconds > 0;
+            if (checkTime )
+            {               
                 l.Debug("  check times Src=" + s.LastAccessTimeUtc + ", Dst=" + d.LastAccessTimeUtc + ", secs=" + ts.TotalSeconds + ", diff=" + timeDiff);
                 if (ts.TotalSeconds > timeDiff)
                 {
                     l.Debug("  check times secs=" + ts.TotalSeconds + " greater than " + timeDiff);
                     return true;
                 }
+            }
+            if ( !newer )
+            {
+                l.Debug(" file not newer, no more to check");
+                return false;
             }
 
             // Check size or simple content changed
@@ -350,6 +356,7 @@ namespace DirectoryMirror
             string dest = dd.FullName + System.IO.Path.DirectorySeparatorChar + f.Name;
             FileInfo dfi = new FileInfo(dest);
 
+            // see if file name is excluded or not included
             if (!passExcludeIncludeFile(f.Name))
             {
                 excludedFiles++;
@@ -581,7 +588,8 @@ namespace DirectoryMirror
                     }
                 }
 
-                // now process files in the source
+                // now process items in the source
+                // first the files...
 
                 files = sd.GetFiles("*.*");
                 if (!isRunning)// exit if abort signalled
